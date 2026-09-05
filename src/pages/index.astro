@@ -1,0 +1,620 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Polish Homework Buddy | Bilingual PDF Reader & Speech Tutor">
+  <div class="min-h-screen bg-[#0A0E1A] text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white pb-12">
+    
+    <!-- Top Bar -->
+    <header class="border-b border-slate-800 bg-[#0F1629]/90 backdrop-blur-md sticky top-0 z-50">
+      <div class="container mx-auto px-4 py-3 max-w-7xl flex flex-wrap justify-between items-center gap-4">
+        <!-- Brand -->
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-red-500 via-white to-blue-600 flex items-center justify-center shadow-lg shadow-red-500/20 text-lg font-bold text-slate-900 border border-white/20">
+            🇵🇱
+          </div>
+          <div>
+            <h1 class="font-extrabold text-base sm:text-lg tracking-tight text-white flex items-center gap-2">
+              Polish Homework Buddy <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-mono">Dual-TTS</span>
+            </h1>
+            <p class="text-[11px] text-slate-400 font-medium">Bilingual PDF Reader & Pronunciation Assistant for Kids</p>
+          </div>
+        </div>
+
+        <!-- Controls (Speech Speed, Samples, New PDF) -->
+        <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <!-- Voice Speed -->
+          <div class="flex items-center bg-[#151D33] border border-slate-700/80 rounded-xl px-2.5 py-1.5 gap-1.5">
+            <span class="text-xs text-slate-400">Speed:</span>
+            <select id="tts-rate" class="bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer">
+              <option value="0.75" class="bg-[#151D33]">🐢 0.75x (Learning)</option>
+              <option value="0.9" class="bg-[#151D33]" selected>🎯 0.9x (Ideal)</option>
+              <option value="1.0" class="bg-[#151D33]">⚡ 1.0x (Normal)</option>
+            </select>
+          </div>
+
+          <!-- Sample Selector -->
+          <div class="flex items-center bg-[#151D33] border border-slate-700/80 rounded-xl px-2.5 py-1.5 gap-1.5">
+            <span class="text-xs text-slate-400">Samples:</span>
+            <select id="sample-select" class="bg-transparent text-xs font-bold text-indigo-400 focus:outline-none cursor-pointer">
+              <option value="" disabled selected>Select Demo...</option>
+              <option value="math" class="bg-[#151D33]">🔢 Matematyka (Math Word Problem)</option>
+              <option value="nature" class="bg-[#151D33]">🌿 Przyroda (Bocian biały)</option>
+              <option value="story" class="bg-[#151D33]">🐲 Czytanka (Smok Płomyk)</option>
+            </select>
+          </div>
+
+          <!-- Reset / Clear -->
+          <button id="btn-reset" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all border border-slate-700">
+            🔄 New Document
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="container mx-auto px-4 py-6 max-w-7xl flex-grow space-y-6">
+      
+      <!-- Upload Dropzone (Hidden when document is loaded) -->
+      <div id="dropzone-container" class="bg-[#11182B] border-2 border-dashed border-indigo-500/40 hover:border-indigo-400 rounded-3xl p-8 sm:p-14 text-center space-y-6 transition-all shadow-2xl relative overflow-hidden group">
+        <div class="max-w-xl mx-auto space-y-4">
+          <div class="w-16 h-16 rounded-2xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center mx-auto text-3xl border border-indigo-500/30 group-hover:scale-110 transition-transform">
+            📄
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Upload Polish Homework PDF</h2>
+          <p class="text-sm text-slate-300 leading-relaxed">
+            Drag & drop your child's Polish school worksheet (PDF, images, or paste text). We'll split it side-by-side with instant English translations and word-by-word pronunciation!
+          </p>
+
+          <div class="flex flex-wrap justify-center gap-4 pt-2">
+            <label class="cursor-pointer px-6 py-3.5 rounded-xl bg-gradient-to-r from-red-600 to-indigo-600 hover:from-red-500 hover:to-indigo-500 text-white font-extrabold text-sm shadow-lg shadow-indigo-600/20 transition-all hover:scale-105 active:scale-95 inline-flex items-center gap-2">
+              <span>📂 Choose PDF File</span>
+              <input type="file" id="pdf-file-input" accept="application/pdf,image/*" class="hidden" />
+            </label>
+
+            <button id="btn-paste-modal" class="px-5 py-3.5 rounded-xl bg-[#1A233D] hover:bg-[#222E4F] text-slate-200 font-bold text-sm border border-slate-700 transition-all inline-flex items-center gap-2">
+              <span>✍️ Paste Homework Text</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Demo Pill -->
+        <div class="pt-6 border-t border-slate-800/80 flex justify-center items-center gap-2 text-xs text-slate-400">
+          <span>💡 Or test instantly with a demo:</span>
+          <button class="demo-btn text-indigo-400 font-bold hover:underline" data-demo="math">Math Homework</button> •
+          <button class="demo-btn text-indigo-400 font-bold hover:underline" data-demo="nature">Science/Animals</button> •
+          <button class="demo-btn text-indigo-400 font-bold hover:underline" data-demo="story">Reading Story</button>
+        </div>
+      </div>
+
+      <!-- Loading Indicator -->
+      <div id="loading-state" class="hidden bg-[#11182B] border border-slate-800 rounded-3xl p-12 text-center space-y-4 shadow-xl">
+        <div class="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <h3 class="text-lg font-bold text-white">Translating & Aligning Homework...</h3>
+        <p id="loading-msg" class="text-xs text-slate-400">Extracting Polish text and generating sentence-by-sentence audio mapping...</p>
+      </div>
+
+      <!-- Side-by-Side Dual Reader (Visible when document loaded) -->
+      <div id="reader-container" class="hidden space-y-4">
+        
+        <!-- Status & Stats Banner -->
+        <div class="bg-[#11182B] border border-slate-800 rounded-2xl p-4 flex flex-wrap justify-between items-center gap-4 text-xs">
+          <div class="flex items-center gap-3">
+            <span class="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Active Document
+            </span>
+            <span id="doc-title" class="font-bold text-white truncate max-w-[200px] sm:max-w-xs">Zadanie domowe</span>
+            <span id="sentence-count" class="text-slate-400">0 sentences</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="text-slate-400 hidden sm:inline">Tip: Click <b>any word</b> to pronounce it!</span>
+            <button id="btn-read-all" class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-indigo-600/20">
+              <span>▶️ Read All (PL ➔ EN)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Split Columns Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          
+          <!-- LEFT COLUMN: POLISH (ORIGINAL) -->
+          <div class="bg-[#0F1629] border border-slate-800 rounded-3xl p-5 sm:p-6 space-y-4 shadow-xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+              <div class="flex items-center gap-2">
+                <span class="text-xl">🇵🇱</span>
+                <div>
+                  <h3 class="font-extrabold text-sm sm:text-base text-white">Język Polski (Oryginał)</h3>
+                  <p class="text-[10px] text-slate-400">Native Polish Syntax & Polish Speech (pl-PL)</p>
+                </div>
+              </div>
+              <span class="text-[10px] font-mono text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full font-bold">POLISH</span>
+            </div>
+
+            <!-- Polish Sentences List -->
+            <div id="polish-list" class="space-y-4 max-h-[72vh] overflow-y-auto pr-1">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN: ENGLISH (TRANSLATION) -->
+          <div class="bg-[#0F1629] border border-slate-800 rounded-3xl p-5 sm:p-6 space-y-4 shadow-xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+              <div class="flex items-center gap-2">
+                <span class="text-xl">🇬🇧</span>
+                <div>
+                  <h3 class="font-extrabold text-sm sm:text-base text-white">English Translation</h3>
+                  <p class="text-[10px] text-slate-400">Accurate English Meaning & US Speech (en-US)</p>
+                </div>
+              </div>
+              <span class="text-[10px] font-mono text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full font-bold">ENGLISH</span>
+            </div>
+
+            <!-- English Sentences List -->
+            <div id="english-list" class="space-y-4 max-h-[72vh] overflow-y-auto pr-1">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Paste Text Modal -->
+      <div id="paste-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-[#11182B] border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-2xl w-full space-y-4 shadow-2xl">
+          <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+              <span>✍️</span> Paste Polish Homework Text
+            </h3>
+            <button id="btn-close-paste" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+          </div>
+
+          <textarea id="paste-input" rows="8" class="w-full bg-[#0A0E1A] border border-slate-700 rounded-2xl p-4 text-sm font-sans text-white focus:outline-none focus:border-indigo-500 leading-relaxed" placeholder="Wklej treść zadania domowego po polsku... (np. zadanie z matematyki lub czytankę)"></textarea>
+
+          <div class="flex justify-end gap-3 pt-2">
+            <button id="btn-cancel-paste" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold">Cancel</button>
+            <button id="btn-submit-paste" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/20">
+              ⚡ Process & Translate
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Word Pronunciation Mini Tooltip / Banner -->
+      <div id="word-toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#1A233D] border border-indigo-500/40 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs z-50 transition-all translate-y-20 opacity-0 pointer-events-none">
+        <span class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-white text-sm">🔊</span>
+        <div>
+          <span id="toast-word" class="font-extrabold text-sm text-indigo-300 block">Słowo</span>
+          <span id="toast-lang" class="text-[10px] text-slate-400 block">Pronouncing in Polish (pl-PL)...</span>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 bg-[#0F1629] py-6 text-center text-xs text-slate-500 mt-12">
+      <p>&copy; {new Date().getFullYear()} Polish Homework Buddy • Engineered for Kids & Language Learners</p>
+    </footer>
+
+  </div>
+</Layout>
+
+<!-- Load PDF.js from official Cloudflare CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" is:inline></script>
+
+<script is:inline>
+  // Setup PDF.js worker
+  if (window.pdfjsLib) {
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+
+  // Pre-configured Sample Datasets for Polish School
+  const SAMPLES = {
+    math: {
+      title: "Zadanie z Matematyki - Owoce w koszyku",
+      text: "Ania miała w koszyku 15 czerwonych jabłek i 8 soczystych gruszek.\nDała swojemu młodszemu bratu Tomkowi 6 jabłek na drugie śniadanie.\nNastępnie mama dołożyła do koszyka jeszcze 4 dojrzałe gruszki.\nIle wszystkich owoców znajduje się teraz w koszyku Ani?\nZapisz pełne działanie matematyczne oraz ułóż pełną odpowiedź."
+    },
+    nature: {
+      title: "Przyroda - Bocian biały w Polsce",
+      text: "Bocian biały jest jednym z najbardziej lubianych i rozpoznawalnych ptaków w Polsce.\nKażdego roku pod koniec lata bociany zbierają się w duże stada i wyruszają w długą podróż do ciepłych krajów w Afryce.\nWiosną powracają dokładnie do tych samych gniazd, które często budują na dachach domów i słupach.\nBociany żywią się głównie owadami, dżdżownicami, małymi gryzoniami oraz żabami na łąkach."
+    },
+    story: {
+      title: "Czytanka - Mały Smok Płomyk",
+      text: "Za wysokimi górami i starym lasem mieszkał mały smok o imieniu Płomyk.\nW przeciwieństwie do innych groźnych smoków, Płomyk nie lubił ziać wielkim ogniem ani nikogo straszyć.\nJego największą pasją było pieczenie pysznych ciasteczek cynamonowych dla swoich leśnych przyjaciół.\nCodziennie rano wiewiórki i zajączki przychodziły do jaskini smoka, aby wspólnie zjeść ciepłe śniadanie."
+    }
+  };
+
+  // Built-in Elementary Offline Polish-English Translation Dictionary for Instant Fallback
+  const DICT = {
+    "ania": "Ania", "miała": "had", "w": "in", "koszyku": "the basket", "15": "15", "czerwonych": "red", "jabłek": "apples",
+    "i": "and", "8": "8", "soczystych": "juicy", "gruszek": "pears", "dała": "gave", "swojemu": "her", "młodszemu": "younger",
+    "bratu": "brother", "tomkowi": "Tomek", "6": "6", "na": "for", "drugie": "second", "śniadanie": "breakfast",
+    "następnie": "then", "mama": "mom", "dołożyła": "added", "do": "to", "jeszcze": "another", "4": "4", "dojrzałe": "ripe",
+    "gruszki": "pears", "ile": "how many", "wszystkich": "total", "owoców": "fruits", "znajduje": "are", "się": "located",
+    "teraz": "now", "ani": "Ania's", "zapisz": "write down", "pełne": "full", "działanie": "calculation", "matematyczne": "mathematical",
+    "oraz": "and", "ułóż": "compose", "odpowiedź": "answer", "bocian": "stork", "biały": "white", "jest": "is", "jednym": "one",
+    "z": "of", "najbardziej": "most", "lubianych": "beloved", "rozpoznawalnych": "recognizable", "ptaków": "birds", "polsce": "Poland",
+    "każdego": "every", "roku": "year", "pod": "at", "koniec": "the end", "lata": "of summer", "bociany": "storks", "zbierają": "gather",
+    "duże": "large", "stada": "flocks", "wyruszają": "set off", "długą": "long", "podróż": "journey", "ciepłych": "warm",
+    "krajów": "countries", "afryce": "Africa", "wiosną": "in spring", "powracają": "they return", "dokładnie": "exactly",
+    "tych": "the", "samych": "same", "gniazd": "nests", "które": "which", "często": "often", "budują": "they build",
+    "dachach": "roofs", "domów": "of houses", "słupach": "poles", "żywią": "feed", "głównie": "mainly", "owadami": "insects",
+    "dżdżownicami": "earthworms", "małymi": "small", "gryzoniami": "rodents", "żabami": "frogs", "łąkach": "meadows",
+    "za": "behind", "wysokimi": "tall", "górami": "mountains", "starym": "old", "lasem": "forest", "mieszkał": "lived",
+    "mały": "little", "smok": "dragon", "o": "named", "imieniu": "name", "płomyk": "Płomyk (Flame)", "przeciwieństwie": "contrast",
+    "innych": "other", "groźnych": "dangerous", "smoków": "dragons", "nie": "did not", "lubił": "like", "ziać": "breathe",
+    "wielkim": "big", "ogniem": "fire", "ani": "nor", "nikogo": "anyone", "straszyć": "scare", "jego": "his", "największą": "greatest",
+    "pasją": "passion", "było": "was", "pieczenie": "baking", "pysznych": "delicious", "ciasteczek": "cookies", "cynamonowych": "cinnamon",
+    "swoich": "his", "leśnych": "forest", "przyjaciół": "friends", "codziennie": "every day", "rano": "in the morning",
+    "wiewiórki": "squirrels", "zajączki": "little bunnies", "przychodziły": "came", "jaskini": "cave", "smoka": "dragon's",
+    "aby": "in order to", "wspólnie": "together", "zjeść": "eat", "ciepłe": "warm"
+  };
+
+  // State
+  let currentItems = [];
+  let isReadingAll = false;
+
+  // DOM Elements
+  const dropzone = document.getElementById('dropzone-container');
+  const reader = document.getElementById('reader-container');
+  const loading = document.getElementById('loading-state');
+  const loadingMsg = document.getElementById('loading-msg');
+  const fileInput = document.getElementById('pdf-file-input');
+  const pasteModal = document.getElementById('paste-modal');
+  const pasteInput = document.getElementById('paste-input');
+  const polishList = document.getElementById('polish-list');
+  const englishList = document.getElementById('english-list');
+  const sampleSelect = document.getElementById('sample-select');
+
+  // =========================================================================
+  // 1. Text-to-Speech (TTS) Engine (Strictly compliant with Web Speech API quirks)
+  // =========================================================================
+  function speakWordOrText(text, lang = 'pl-PL') {
+    if (!('speechSynthesis' in window)) {
+      alert("Your browser does not support Web Speech API.");
+      return;
+    }
+
+    const rateVal = parseFloat(document.getElementById('tts-rate').value) || 0.9;
+
+    // Memory Guard Rule: cancel first, wait 50ms to prevent Chrome collision freeze
+    window.speechSynthesis.cancel();
+
+    setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+      utterance.rate = rateVal;
+      utterance.pitch = 1.0;
+
+      // Select matching local voice if available
+      const voices = window.speechSynthesis.getVoices();
+      const langPrefix = lang.split('-')[0];
+      const matchedVoice = voices.find(v => v.lang.toLowerCase().startsWith(langPrefix.toLowerCase()) && v.localService) 
+                        || voices.find(v => v.lang.toLowerCase().startsWith(langPrefix.toLowerCase()));
+      if (matchedVoice) {
+        utterance.voice = matchedVoice;
+      }
+
+      showToast(text, lang === 'pl-PL' ? 'Polish 🇵🇱 (pl-PL)' : 'English 🇬🇧 (en-US)');
+      window.speechSynthesis.speak(utterance);
+    }, 50);
+  }
+
+  function showToast(word, langLabel) {
+    const toast = document.getElementById('word-toast');
+    document.getElementById('toast-word').textContent = word;
+    document.getElementById('toast-lang').textContent = `Pronouncing in ${langLabel}...`;
+    toast.classList.remove('translate-y-20', 'opacity-0');
+    setTimeout(() => {
+      toast.classList.add('translate-y-20', 'opacity-0');
+    }, 2000);
+  }
+
+  // =========================================================================
+  // 2. Translation & Parsing Engine
+  // =========================================================================
+  async function translateSentence(plText) {
+    // 1. Try MyMemory Free API
+    try {
+      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(plText)}&langpair=pl|en`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data && data.responseData && data.responseData.translatedText) {
+        return data.responseData.translatedText;
+      }
+    } catch(e) {
+      console.warn("MyMemory API failed, falling back to dictionary...", e);
+    }
+
+    // 2. Fallback Dictionary synthesis
+    const words = plText.split(/\s+/);
+    const translatedWords = words.map(w => {
+      const clean = w.toLowerCase().replace(/[.,?!:;]/g, '');
+      const punctuation = w.match(/[.,?!:;]/) ? w.match(/[.,?!:;]/)[0] : '';
+      return (DICT[clean] || w) + punctuation;
+    });
+    return translatedWords.join(' ');
+  }
+
+  async function processPolishRawText(rawText, docTitle = "Homework Document") {
+    loading.classList.remove('hidden');
+    dropzone.classList.add('hidden');
+    reader.classList.add('hidden');
+    loadingMsg.textContent = "Parsing sentences and generating English translation...";
+
+    // Split into sentences / meaningful lines
+    const rawLines = rawText.split(/\n+/).map(l => l.trim()).filter(l => l.length > 0);
+    const sentences = [];
+
+    rawLines.forEach(line => {
+      // Split on period, exclamation, question mark while preserving sentence bounds
+      const splitSentences = line.match(/[^.!?]+[.!?]+/g) || [line];
+      splitSentences.forEach(s => {
+        const trimmed = s.trim();
+        if (trimmed.length > 0) sentences.push(trimmed);
+      });
+    });
+
+    currentItems = [];
+
+    for (let i = 0; i < sentences.length; i++) {
+      const pl = sentences[i];
+      const en = await translateSentence(pl);
+      currentItems.push({ id: i + 1, pl, en });
+    }
+
+    renderBilingualLists(docTitle);
+    loading.classList.add('hidden');
+    reader.classList.remove('hidden');
+  }
+
+  // =========================================================================
+  // 3. Render Side-by-Side Cards & Clickable Words
+  // =========================================================================
+  function renderBilingualLists(title) {
+    document.getElementById('doc-title').textContent = title;
+    document.getElementById('sentence-count').textContent = `${currentItems.length} sentences`;
+
+    polishList.innerHTML = '';
+    englishList.innerHTML = '';
+
+    currentItems.forEach(item => {
+      // Create Polish Card
+      const plCard = document.createElement('div');
+      plCard.id = `pl-card-${item.id}`;
+      plCard.className = 'sentence-card group bg-[#11182B] border border-slate-800 hover:border-red-500/50 p-4 rounded-2xl transition-all space-y-3';
+      
+      // Make each Polish word individually clickable for speech
+      const plWordsHtml = item.pl.split(/(\s+)/).map(segment => {
+        if (/^\s+$/.test(segment)) return segment;
+        return `<span class="clickable-word hover:bg-red-500/20 hover:text-red-300 text-slate-100 rounded px-0.5 transition-colors cursor-pointer" data-lang="pl-PL" title="Click to pronounce in Polish">${segment}</span>`;
+      }).join('');
+
+      plCard.innerHTML = `
+        <div class="flex items-start justify-between gap-3">
+          <span class="w-6 h-6 rounded-full bg-red-500/10 text-red-400 font-mono text-xs font-black flex items-center justify-center shrink-0 mt-0.5 border border-red-500/20">
+            ${item.id}
+          </span>
+          <p class="text-sm sm:text-base text-slate-100 font-medium leading-relaxed flex-1">${plWordsHtml}</p>
+        </div>
+        <div class="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs">
+          <button class="btn-play-sentence px-2.5 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold flex items-center gap-1" data-text="${encodeURIComponent(item.pl)}" data-lang="pl-PL">
+            <span>🔊 Posłuchaj (PL)</span>
+          </button>
+          <button class="btn-play-both px-2.5 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 font-bold flex items-center gap-1 border border-indigo-500/30" data-idx="${item.id - 1}">
+            <span>▶️ Czytaj oba (PL ➔ EN)</span>
+          </button>
+        </div>
+      `;
+
+      // Create English Card
+      const enCard = document.createElement('div');
+      enCard.id = `en-card-${item.id}`;
+      enCard.className = 'sentence-card group bg-[#11182B] border border-slate-800 hover:border-blue-500/50 p-4 rounded-2xl transition-all space-y-3';
+
+      // Make each English word individually clickable for speech
+      const enWordsHtml = item.en.split(/(\s+)/).map(segment => {
+        if (/^\s+$/.test(segment)) return segment;
+        return `<span class="clickable-word hover:bg-blue-500/20 hover:text-blue-300 text-slate-100 rounded px-0.5 transition-colors cursor-pointer" data-lang="en-US" title="Click to pronounce in English">${segment}</span>`;
+      }).join('');
+
+      enCard.innerHTML = `
+        <div class="flex items-start justify-between gap-3">
+          <span class="w-6 h-6 rounded-full bg-blue-500/10 text-blue-400 font-mono text-xs font-black flex items-center justify-center shrink-0 mt-0.5 border border-blue-500/20">
+            ${item.id}
+          </span>
+          <p class="text-sm sm:text-base text-slate-100 font-medium leading-relaxed flex-1">${enWordsHtml}</p>
+        </div>
+        <div class="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs">
+          <button class="btn-play-sentence px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-bold flex items-center gap-1" data-text="${encodeURIComponent(item.en)}" data-lang="en-US">
+            <span>🔊 Listen (EN)</span>
+          </button>
+          <span class="text-[10px] text-slate-500 font-mono">Sentence #${item.id}</span>
+        </div>
+      `;
+
+      // Synchronized Hover Highlighting
+      plCard.addEventListener('mouseenter', () => enCard.classList.add('border-indigo-500', 'bg-[#151E38]'));
+      plCard.addEventListener('mouseleave', () => enCard.classList.remove('border-indigo-500', 'bg-[#151E38]'));
+      enCard.addEventListener('mouseenter', () => plCard.classList.add('border-indigo-500', 'bg-[#151E38]'));
+      enCard.addEventListener('mouseleave', () => plCard.classList.remove('border-indigo-500', 'bg-[#151E38]'));
+
+      polishList.appendChild(plCard);
+      englishList.appendChild(enCard);
+    });
+
+    // Attach Clickable Word Events
+    document.querySelectorAll('.clickable-word').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const word = el.textContent.trim().replace(/[.,?!:;()]/g, '');
+        const lang = el.dataset.lang;
+        if (word) speakWordOrText(word, lang);
+      });
+    });
+
+    // Attach Sentence Play Events
+    document.querySelectorAll('.btn-play-sentence').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const text = decodeURIComponent(btn.dataset.text);
+        const lang = btn.dataset.lang;
+        speakWordOrText(text, lang);
+      });
+    });
+
+    // Attach Dual-Play (PL -> EN)
+    document.querySelectorAll('.btn-play-both').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx = parseInt(btn.dataset.idx, 10);
+        playBilingualSequence(idx);
+      });
+    });
+  }
+
+  // =========================================================================
+  // 4. Sequential Dual-Play Engine (PL -> Pause -> EN)
+  // =========================================================================
+  function playBilingualSequence(idx) {
+    if (idx >= currentItems.length) {
+      isReadingAll = false;
+      return;
+    }
+
+    const item = currentItems[idx];
+    const rateVal = parseFloat(document.getElementById('tts-rate').value) || 0.9;
+
+    // Highlight active cards
+    document.querySelectorAll('.sentence-card').forEach(c => c.classList.remove('ring-2', 'ring-indigo-500'));
+    const plC = document.getElementById(`pl-card-${item.id}`);
+    const enC = document.getElementById(`en-card-${item.id}`);
+    if (plC) plC.classList.add('ring-2', 'ring-indigo-500');
+    if (enC) enC.classList.add('ring-2', 'ring-indigo-500');
+
+    window.speechSynthesis.cancel();
+
+    setTimeout(() => {
+      // Step 1: Polish Speech
+      const plUtterance = new SpeechSynthesisUtterance(item.pl);
+      plUtterance.lang = 'pl-PL';
+      plUtterance.rate = rateVal;
+
+      plUtterance.onend = () => {
+        // Step 2: Pause 450ms then English Speech
+        setTimeout(() => {
+          const enUtterance = new SpeechSynthesisUtterance(item.en);
+          enUtterance.lang = 'en-US';
+          enUtterance.rate = rateVal;
+
+          enUtterance.onend = () => {
+            if (isReadingAll) {
+              setTimeout(() => playBilingualSequence(idx + 1), 600);
+            } else {
+              if (plC) plC.classList.remove('ring-2', 'ring-indigo-500');
+              if (enC) enC.classList.remove('ring-2', 'ring-indigo-500');
+            }
+          };
+
+          window.speechSynthesis.speak(enUtterance);
+        }, 450);
+      };
+
+      window.speechSynthesis.speak(plUtterance);
+    }, 50);
+  }
+
+  document.getElementById('btn-read-all').addEventListener('click', () => {
+    isReadingAll = true;
+    playBilingualSequence(0);
+  });
+
+  // =========================================================================
+  // 5. PDF Upload & Extraction Handling
+  // =========================================================================
+  fileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.type === 'application/pdf') {
+      loading.classList.remove('hidden');
+      dropzone.classList.add('hidden');
+      loadingMsg.textContent = `Reading PDF pages from ${file.name}...`;
+
+      const reader = new FileReader();
+      reader.onload = async function() {
+        try {
+          const typedarray = new Uint8Array(this.result);
+          const pdf = await window.pdfjsLib.getDocument(typedarray).promise;
+          let fullText = '';
+
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map(item => item.str).join(' ');
+            fullText += pageText + '\n';
+          }
+
+          processPolishRawText(fullText, file.name);
+        } catch(err) {
+          alert("Could not extract text from PDF. Please paste the text manually.");
+          loading.classList.add('hidden');
+          dropzone.classList.remove('hidden');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      alert("Please upload a PDF file.");
+    }
+  });
+
+  // Paste Text Modal Handlers
+  document.getElementById('btn-paste-modal').addEventListener('click', () => {
+    pasteModal.classList.remove('hidden');
+    pasteModal.classList.add('flex');
+  });
+  document.getElementById('btn-close-paste').addEventListener('click', () => {
+    pasteModal.classList.add('hidden');
+    pasteModal.classList.remove('flex');
+  });
+  document.getElementById('btn-cancel-paste').addEventListener('click', () => {
+    pasteModal.classList.add('hidden');
+    pasteModal.classList.remove('flex');
+  });
+  document.getElementById('btn-submit-paste').addEventListener('click', () => {
+    const text = pasteInput.value.trim();
+    if (text) {
+      pasteModal.classList.add('hidden');
+      pasteModal.classList.remove('flex');
+      processPolishRawText(text, "Pasted Homework Worksheet");
+    }
+  });
+
+  // Sample Selection
+  function loadSample(key) {
+    if (SAMPLES[key]) {
+      processPolishRawText(SAMPLES[key].text, SAMPLES[key].title);
+    }
+  }
+
+  sampleSelect.addEventListener('change', (e) => {
+    loadSample(e.target.value);
+  });
+
+  document.querySelectorAll('.demo-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      loadSample(btn.dataset.demo);
+    });
+  });
+
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    window.speechSynthesis.cancel();
+    isReadingAll = false;
+    reader.classList.add('hidden');
+    loading.classList.add('hidden');
+    dropzone.classList.remove('hidden');
+    fileInput.value = '';
+    sampleSelect.value = '';
+  });
+</script>

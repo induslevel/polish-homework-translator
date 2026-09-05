@@ -1,0 +1,19 @@
+services:
+  astro-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: polish-homework-translator
+    ports:
+      - "4335:4323"
+    restart: unless-stopped
+    networks:
+      - frontend
+    environment:
+      - USE_CLOUDFLARE=false
+      - NODE_ENV=production
+      - SITE_URL=https://homework.induslevel.com
+
+networks:
+  frontend:
+    external: true
